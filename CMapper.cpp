@@ -51,6 +51,29 @@ void CMapper::Update(double xPos, double yPos)
 	return;
 }
 
+bool CMapper::CheckReward(double xPos, double yPos) 
+{
+	//check to make sure positions are within range
+	if ( (xPos < 0) || (xPos > CParams::WindowWidth) || 
+		(yPos < 0) || (yPos > CParams::WindowHeight) )
+	{
+		return false;
+	}
+
+	int cellX = (int)(xPos / m_dCellSize );
+	int cellY = (int)(yPos / m_dCellSize );
+
+	if (cellX < 50 / m_dCellSize) {
+		return true;
+	}
+
+	if (cellX > m_NumCellsX - (70 / m_dCellSize)) {
+		return true;
+	}
+
+	return false;
+}
+
 //---------------------------------------------------------------
 int CMapper::TicksLingered(double xPos, double yPos)const
 {
@@ -121,7 +144,7 @@ void CMapper::RenderReward(HDC surface)
 {
 	for (int x=0; x<m_NumCellsX; ++x)
 	{
-		for (int y=0; y<m_NumCellsY; ++y)
+		for (int y= 280 / m_dCellSize; y<m_NumCellsY; ++y)
 		{
 			if (x < 50/m_dCellSize) 
 			{			

@@ -4,24 +4,24 @@
 //
 //-----------------------------------------------------------------------
 CMinesweeper::CMinesweeper():
-                             m_dRotation(0),
-                             m_lTrack(0),
-                             m_rTrack(0),
-                             m_dFitness(0),
-							               m_dScale(CParams::iSweeperScale),
-                             m_bCollided(false)
-                             
-			 
+m_dRotation(0),
+	m_lTrack(0),
+	m_rTrack(0),
+	m_dFitness(0),
+	m_dScale(CParams::iSweeperScale),
+	m_bCollided(false)
+
+
 {
-  //create a static start position
-  m_vPosition = SVector2D(180, 50);
+	//create a static start position
+	m_vPosition = SVector2D(180, 50);
 
-   //create the sensors
-  CreateSensors(m_Sensors, CParams::iNumSensors, CParams::dSensorRange); 
+	//create the sensors
+	CreateSensors(m_Sensors, CParams::iNumSensors, CParams::dSensorRange); 
 
-  //initialize its memory
-  m_MemoryMap.Init(CParams::WindowWidth,
-                   CParams::WindowHeight);
+	//initialize its memory
+	m_MemoryMap.Init(CParams::WindowWidth,
+		CParams::WindowHeight);
 
 }
 
@@ -32,13 +32,13 @@ CMinesweeper::CMinesweeper():
 //  the sweepers sensors.
 //------------------------------------------------------------------------
 void CMinesweeper::CreateSensors(vector<SPoint> &sensors,
-                                 int            NumSensors,
-                                 double         range)
+	int            NumSensors,
+	double         range)
 {
-  //make sure vector of sensors is empty before proceeding
-  sensors.clear();
+	//make sure vector of sensors is empty before proceeding
+	sensors.clear();
 
-  double SegmentAngle = CParams::dPi / (NumSensors-1);
+	double SegmentAngle = CParams::dPi / (NumSensors-1);
 
 	//going clockwise from 90deg left of position calculate the fan of
 	//points radiating out (not including the origin)
@@ -47,12 +47,12 @@ void CMinesweeper::CreateSensors(vector<SPoint> &sensors,
 		//calculate vertex position
 		SPoint point;
 
-    point.x = -sin(i * SegmentAngle - CParams::dHalfPi) * range;
+		point.x = -sin(i * SegmentAngle - CParams::dHalfPi) * range;
 
-	  point.y = cos(i * SegmentAngle - CParams::dHalfPi) * range;
-		
+		point.y = cos(i * SegmentAngle - CParams::dHalfPi) * range;
+
 		sensors.push_back(point);
-		
+
 	}//next segment
 
 }
@@ -65,16 +65,17 @@ void CMinesweeper::Reset()
 {
 	//reset the sweepers positions
 	m_vPosition = SVector2D(180, 50);
-	
+
 	//and the fitness
 	m_dFitness = 0;
 
-  //and the rotation
-  m_dRotation = 0;
+	//and the rotation
+	m_dRotation = 0;
 
-  //reset its memory
-  m_MemoryMap.Reset();
+	//reset its memory
+	m_MemoryMap.Reset();
 
+	m_bActive = true;
 }
 
 //------------------------- RenderMemory ---------------------------------
@@ -82,12 +83,12 @@ void CMinesweeper::Reset()
 //------------------------------------------------------------------------
 void CMinesweeper::Render(HDC surface)
 {
-  //render the memory
-  m_MemoryMap.Render(surface);
+	//render the memory
+	m_MemoryMap.Render(surface);
 
-  string s = itos(m_MemoryMap.NumCellsVisited());
-  s = "Num Cells Visited: " + s;
-  TextOut(surface, 220,0,s.c_str(), s.size());
+	string s = itos(m_MemoryMap.NumCellsVisited());
+	s = "Num Cells Visited: " + s;
+	TextOut(surface, 220,0,s.c_str(), s.size());
 
 }
 
@@ -103,16 +104,16 @@ void CMinesweeper::WorldTransform(vector<SPoint> &sweeper, double scale)
 {
 	//create the world transformation matrix
 	C2DMatrix matTransform;
-	
+
 	//scale
 	matTransform.Scale(scale, scale);
-	
+
 	//rotate
 	matTransform.Rotate(m_dRotation);
-	
+
 	//and translate
 	matTransform.Translate(m_vPosition.x, m_vPosition.y);
-	
+
 	//now transform the ships vertices
 	matTransform.TransformSPoints(sweeper);
 }
@@ -132,67 +133,71 @@ void CMinesweeper::WorldTransform(vector<SPoint> &sweeper, double scale)
 //-----------------------------------------------------------------------
 bool CMinesweeper::Update(vector<SPoint> &objects)
 {
-	
-	//this will store all the inputs for the NN
-	vector<double> inputs;	
+	if (m_bActive) {	
+		//this will store all the inputs for the NN
+		vector<double> inputs;	
 
-  //grab sensor readings
-  TestSensors(objects);
+		//grab sensor readings
+		TestSensors(objects);
 
 
-  //input sensors into net
-  for (int sr=0; sr<m_vecdSensors.size(); ++sr)
-  {
-    inputs.push_back(m_vecdSensors[sr]);
+		//input sensors into net
+		for (int sr=0; sr<m_vecdSensors.size(); ++sr)
+		{
+			inputs.push_back(m_vecdSensors[sr]);
 
-    inputs.push_back(m_vecFeelers[sr]);
-  }
-	
-  inputs.push_back(m_bCollided);
-  
-	//update the brain and get feedback
-	vector<double> output = m_pItsBrain->Update(inputs, CNeuralNet::active);
+			inputs.push_back(m_vecFeelers[sr]);
+		}
 
-	//make sure there were no errors in calculating the 
-	//output
-	if (output.size() < CParams::iNumOutputs) 
-  {
-    return false;
-  }
-  
-	//assign the outputs to the sweepers left & right tracks
-	m_lTrack = output[0];
-	m_rTrack = output[1];
+		inputs.push_back(m_bCollided);
 
-	//calculate steering forces
-	double RotForce = m_lTrack - m_rTrack;
+		//update the brain and get feedback
+		vector<double> output = m_pItsBrain->Update(inputs, CNeuralNet::active);
 
-  //clamp rotation
-	Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
-	
-	m_dRotation += RotForce;
+		//make sure there were no errors in calculating the 
+		//output
+		if (output.size() < CParams::iNumOutputs) 
+		{
+			return false;
+		}
 
-	//update Look At 
-	m_vLookAt.x = -sin(m_dRotation);
-	m_vLookAt.y = cos(m_dRotation);
+		//assign the outputs to the sweepers left & right tracks
+		m_lTrack = output[0];
+		m_rTrack = output[1];
 
-  //if the sweepers haven't collided with an obstacle
-  //update their position
-  if (!m_bCollided)
-  {
-    m_dSpeed = m_lTrack + m_rTrack;
+		//calculate steering forces
+		double RotForce = m_lTrack - m_rTrack;
 
-   //update position
-   m_vPosition += (m_vLookAt * m_dSpeed);
+		//clamp rotation
+		Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
 
-   //test range of x,y values - because of 'cheap' collision detection
-   //this can go into error when using < 4 sensors
-   TestRange();
-  }
+		m_dRotation += RotForce;
 
-  //update the memory map
-  m_MemoryMap.Update(m_vPosition.x, m_vPosition.y);
-  
+		//update Look At 
+		m_vLookAt.x = -sin(m_dRotation);
+		m_vLookAt.y = cos(m_dRotation);
+
+		//if the sweepers haven't collided with an obstacle
+		//update their position
+		if (!m_bCollided)
+		{
+			m_dSpeed = m_lTrack + m_rTrack;
+
+			//update position
+			m_vPosition += (m_vLookAt * m_dSpeed);
+
+			//test range of x,y values - because of 'cheap' collision detection
+			//this can go into error when using < 4 sensors
+			TestRange();
+		}
+
+		//update the memory map
+		m_MemoryMap.Update(m_vPosition.x, m_vPosition.y);
+
+		m_bActive = !m_MemoryMap.CheckReward(m_vPosition.x, m_vPosition.y);
+
+		return true;
+	}
 	return true;
 }
 
@@ -204,108 +209,108 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 //------------------------------------------------------------------------
 void CMinesweeper::TestSensors(vector<SPoint> &objects)
 {
-  m_bCollided = false;  
-  
-  //first we transform the sensors into world coordinates
-  m_tranSensors = m_Sensors;
+	m_bCollided = false;  
 
-  WorldTransform(m_tranSensors, 1);  //scale is 1
+	//first we transform the sensors into world coordinates
+	m_tranSensors = m_Sensors;
 
-  //flush the sensors
-  m_vecdSensors.clear();
-  m_vecFeelers.clear();
+	WorldTransform(m_tranSensors, 1);  //scale is 1
 
-  //now to check each sensor against the objects in the world
-  for (int sr=0; sr<m_tranSensors.size(); ++sr)
-  {
-    bool bHit = false;
+	//flush the sensors
+	m_vecdSensors.clear();
+	m_vecFeelers.clear();
 
-    double dist = 0;
+	//now to check each sensor against the objects in the world
+	for (int sr=0; sr<m_tranSensors.size(); ++sr)
+	{
+		bool bHit = false;
 
-    for (int seg=0; seg<objects.size(); seg+=2)
-    {
-      if (LineIntersection2D(SPoint(m_vPosition.x, m_vPosition.y),
-                             m_tranSensors[sr],
-                             objects[seg],
-                             objects[seg+1],
-                             dist))
-      {
-        bHit = true;
+		double dist = 0;
 
-        break;        
-      }
-    }
-      
-    if (bHit)
-    {
-      m_vecdSensors.push_back(dist);
+		for (int seg=0; seg<objects.size(); seg+=2)
+		{
+			if (LineIntersection2D(SPoint(m_vPosition.x, m_vPosition.y),
+				m_tranSensors[sr],
+				objects[seg],
+				objects[seg+1],
+				dist))
+			{
+				bHit = true;
 
-      //implement very simple collision detection
-      if (dist < CParams::dCollisionDist)
-      {
-        m_bCollided = true;
-      }
-    }
-    
-    else
-    {
-      m_vecdSensors.push_back(-1);
-    } 
-    
-    //check how many times the minesweeper has visited the cell
-    //at the current position
-    int HowOften = m_MemoryMap.TicksLingered(m_tranSensors[sr].x,
-                                             m_tranSensors[sr].y);
+				break;        
+			}
+		}
 
-    
-    //Update the memory info according to HowOften. The maximum
-    //value is 1 (because we want all the inputs into the
-    //ANN to be scaled between -1 < n < 1)
-    if (HowOften == 0)
-    {
-      m_vecFeelers.push_back(-1);
+		if (bHit)
+		{
+			m_vecdSensors.push_back(dist);
 
-      continue;
-    }
-    
-    if (HowOften < 10) 
-    {
-      m_vecFeelers.push_back(0);
+			//implement very simple collision detection
+			if (dist < CParams::dCollisionDist)
+			{
+				m_bCollided = true;
+			}
+		}
 
-      continue;
-    }
+		else
+		{
+			m_vecdSensors.push_back(-1);
+		} 
 
-    if (HowOften < 20)
-    {
-      m_vecFeelers.push_back(0.2);
+		//check how many times the minesweeper has visited the cell
+		//at the current position
+		int HowOften = m_MemoryMap.TicksLingered(m_tranSensors[sr].x,
+			m_tranSensors[sr].y);
 
-      continue;
-    }
 
-    if (HowOften < 30)
-    {
-      m_vecFeelers.push_back(0.4);
+		//Update the memory info according to HowOften. The maximum
+		//value is 1 (because we want all the inputs into the
+		//ANN to be scaled between -1 < n < 1)
+		if (HowOften == 0)
+		{
+			m_vecFeelers.push_back(-1);
 
-      continue;
-    }
+			continue;
+		}
 
-    if (HowOften < 50)
-    {
-      m_vecFeelers.push_back(0.6);
+		if (HowOften < 10) 
+		{
+			m_vecFeelers.push_back(0);
 
-      continue;
-    }
+			continue;
+		}
 
-    if (HowOften < 80) 
-    {
-      m_vecFeelers.push_back(0.8);
+		if (HowOften < 20)
+		{
+			m_vecFeelers.push_back(0.2);
 
-      continue;
-    }
+			continue;
+		}
 
-     m_vecFeelers.push_back(1);   
+		if (HowOften < 30)
+		{
+			m_vecFeelers.push_back(0.4);
 
-  }//next sensor
+			continue;
+		}
+
+		if (HowOften < 50)
+		{
+			m_vecFeelers.push_back(0.6);
+
+			continue;
+		}
+
+		if (HowOften < 80) 
+		{
+			m_vecFeelers.push_back(0.8);
+
+			continue;
+		}
+
+		m_vecFeelers.push_back(1);   
+
+	}//next sensor
 }
 
 //-------------------------------- TestRange -----------------------------
@@ -313,25 +318,25 @@ void CMinesweeper::TestSensors(vector<SPoint> &objects)
 //------------------------------------------------------------------------
 void CMinesweeper::TestRange()
 {
-  if (m_vPosition.x < 0)
-  {
-    m_vPosition.x = 0;
-  }
+	if (m_vPosition.x < 0)
+	{
+		m_vPosition.x = 0;
+	}
 
-  if (m_vPosition.x > CParams::WindowWidth)
-  {
-    m_vPosition.x = CParams::WindowWidth;
-  }
+	if (m_vPosition.x > CParams::WindowWidth)
+	{
+		m_vPosition.x = CParams::WindowWidth;
+	}
 
-  if (m_vPosition.y < 0)
-  {
-    m_vPosition.y = 0;
-  }
+	if (m_vPosition.y < 0)
+	{
+		m_vPosition.y = 0;
+	}
 
-  if (m_vPosition.y > CParams::WindowHeight)
-  {
-    m_vPosition.y = CParams::WindowHeight;
-  }
+	if (m_vPosition.y > CParams::WindowHeight)
+	{
+		m_vPosition.y = CParams::WindowHeight;
+	}
 }
 
 
@@ -340,11 +345,11 @@ void CMinesweeper::TestRange()
 //------------------------------------------------------------------------
 void CMinesweeper::EndOfRunCalculations()
 {
-  //m_dFitness += m_MemoryMap.NumCellsVisited();
+	//m_dFitness += m_MemoryMap.NumCellsVisited();
 	m_dFitness += m_MemoryMap.TMazeReward();
 }
 
 
 
 
-		
+

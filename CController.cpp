@@ -308,11 +308,11 @@ void CController::RenderNetworks(HDC &surface)
 	int	cyInfo = rect.bottom;
 
 	//now draw the 4 best networks
-	m_vecBestSweepers[0].DrawNet(surface, 0, cxInfo, cyInfo, 0);
-	//  m_vecBestSweepers[0].DrawNet(surface, 0, cxInfo/2, cyInfo/2, 0);
-	//  m_vecBestSweepers[1].DrawNet(surface, cxInfo/2, cxInfo, cyInfo/2, 0);
-	//  m_vecBestSweepers[2].DrawNet(surface, 0, cxInfo/2, cyInfo, cyInfo/2);
-	//  m_vecBestSweepers[3].DrawNet(surface, cxInfo/2, cxInfo, cyInfo, cyInfo/2);
+//	m_vecBestSweepers[0].DrawNet(surface, 0, cxInfo, cyInfo, 0);
+	  m_vecBestSweepers[0].DrawNet(surface, 0, cxInfo/2, cyInfo/2, 0);
+	  m_vecBestSweepers[1].DrawNet(surface, cxInfo/2, cxInfo, cyInfo/2, 0);
+	  m_vecBestSweepers[2].DrawNet(surface, 0, cxInfo/2, cyInfo, cyInfo/2);
+	  m_vecBestSweepers[3].DrawNet(surface, cxInfo/2, cxInfo, cyInfo, cyInfo/2);
 }
 
 //------------------------------------Render()--------------------------------------

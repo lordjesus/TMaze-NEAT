@@ -71,6 +71,8 @@ private:
   //if a collision has been detected this flag is set
   bool            m_bCollided;
 
+  // If reward has been collected, stop moving by setting active to false
+  bool			m_bActive;
 
   void      CreateSensors(vector<SPoint> &sensors,
                           int            NumSensors,
