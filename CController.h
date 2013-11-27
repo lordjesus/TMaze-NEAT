@@ -65,6 +65,7 @@ private:
   HPEN        m_GreyPenDotted;
   HPEN        m_RedPenDotted;
 	HPEN				m_OldPen;
+	HPEN		m_BlackPen;
 
   HBRUSH      m_RedBrush;
   HBRUSH      m_BlueBrush;
@@ -87,6 +88,11 @@ private:
 
 	//generation counter
 	int					m_iGenerations;
+	// Trial counter
+	int m_iTrials;
+
+	// The trial where the reward is reversed
+	int m_iReverseTrial;
 
   //local copy of the client window dimensions
   int         m_cxClient, m_cyClient;

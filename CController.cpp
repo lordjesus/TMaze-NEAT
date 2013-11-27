@@ -116,6 +116,7 @@ CController::CController(HWND hwndMain,
 	m_bFastRender(false),
 	m_bRenderBest(false),
 	m_iTicks(0),
+	m_iTrials(0),
 	m_hwndMain(hwndMain),
 	m_hwndInfo(NULL),
 	m_iGenerations(0),
@@ -136,7 +137,10 @@ CController::CController(HWND hwndMain,
 		m_vecBestSweepers.push_back(CMinesweeper());
 	}
 
+	int r = rand() % 3 - 1; // Should be in range [-1, 1] now
 
+	m_iReverseTrial = CParams::iNumTrials / 2 + r;
+	m_iReverseTrial = CParams::iNumTrials / 2;
 
 	m_pPop = new Cga(CParams::iPopSize,
 		CParams::iNumInputs,
@@ -157,6 +161,7 @@ CController::CController(HWND hwndMain,
 	m_GreenPen       = CreatePen(PS_SOLID, 1, RGB(0, 255, 0));
 	m_GreyPenDotted  = CreatePen(PS_DOT, 1, RGB(100, 100, 100));
 	m_RedPenDotted   = CreatePen(PS_DOT, 1, RGB(200, 0, 0));
+	m_BlackPen		 = CreatePen(PS_SOLID, 1, RGB(0, 0, 0));
 
 	m_OldPen	= NULL;
 
@@ -204,30 +209,16 @@ CController::~CController()
 //--------------------------------------------------------------------------------------
 bool CController::Update()
 {
-	//run the sweepers through NUM_TICKS amount of cycles. During this loop each
-	//sweepers NN is constantly updated with the appropriate information from its 
-	//surroundings. The output from the NN is obtained and the sweeper is moved. 
-	if (m_iTicks++ < CParams::iNumTicks)
-	{
-		for (int i=0; i<m_NumSweepers; ++i)
+	if (m_iTrials < CParams::iNumTrials) {
+		//run the sweepers through NUM_TICKS amount of cycles. During this loop each
+		//sweepers NN is constantly updated with the appropriate information from its 
+		//surroundings. The output from the NN is obtained and the sweeper is moved. 
+		if (m_iTicks++ < CParams::iNumTicks)
 		{
-			//update the NN and position
-			if (!m_vecSweepers[i].Update(m_ObjectsVB))
-			{
-				//error in processing the neural net
-				MessageBox(m_hwndMain, "Wrong amount of NN inputs!", "Error", MB_OK);
-
-				return false;
-			}
-		}
-
-		//update the NNs of the last generations best performers
-		if (m_iGenerations > 0)
-		{
-			for (int i=0; i<m_vecBestSweepers.size(); ++i)
+			for (int i=0; i<m_NumSweepers; ++i)
 			{
 				//update the NN and position
-				if (!m_vecBestSweepers[i].Update(m_ObjectsVB))
+				if (!m_vecSweepers[i].Update(m_ObjectsVB))
 				{
 					//error in processing the neural net
 					MessageBox(m_hwndMain, "Wrong amount of NN inputs!", "Error", MB_OK);
@@ -235,9 +226,41 @@ bool CController::Update()
 					return false;
 				}
 			}
+
+			//update the NNs of the last generations best performers
+			if (m_iGenerations > 0)
+			{
+				for (int i=0; i<m_vecBestSweepers.size(); ++i)
+				{
+					//update the NN and position
+					if (!m_vecBestSweepers[i].Update(m_ObjectsVB))
+					{
+						//error in processing the neural net
+						MessageBox(m_hwndMain, "Wrong amount of NN inputs!", "Error", MB_OK);
+
+						return false;
+					}
+				}
+			}
+		}
+		else
+		{
+			// Reset sweepers for next trial - do not change their networks!
+			m_iTicks = 0;
+			m_iTrials++;
+
+			int i = 0;
+			for (i=0; i<m_NumSweepers; ++i)
+			{						
+					m_vecSweepers[i].ResetTrial();
+					m_vecSweepers[i].SetReset(m_iTrials >= m_iReverseTrial); // Toggle reverse mode when the time is due
+			}
+
+			//this will call WM_PAINT which will render our scene
+			InvalidateRect(m_hwndInfo, NULL, TRUE);
+			UpdateWindow(m_hwndInfo);
 		}
 	}
-
 	//We have completed another generation so now we need to run the GA
 	else
 	{    
@@ -251,6 +274,7 @@ bool CController::Update()
 
 		//increment the generation counter
 		++m_iGenerations;
+		m_iTrials = 0;
 
 		//reset cycles
 		m_iTicks = 0;
@@ -308,11 +332,11 @@ void CController::RenderNetworks(HDC &surface)
 	int	cyInfo = rect.bottom;
 
 	//now draw the 4 best networks
-//	m_vecBestSweepers[0].DrawNet(surface, 0, cxInfo, cyInfo, 0);
-	  m_vecBestSweepers[0].DrawNet(surface, 0, cxInfo/2, cyInfo/2, 0);
-	  m_vecBestSweepers[1].DrawNet(surface, cxInfo/2, cxInfo, cyInfo/2, 0);
-	  m_vecBestSweepers[2].DrawNet(surface, 0, cxInfo/2, cyInfo, cyInfo/2);
-	  m_vecBestSweepers[3].DrawNet(surface, cxInfo/2, cxInfo, cyInfo, cyInfo/2);
+	//	m_vecBestSweepers[0].DrawNet(surface, 0, cxInfo, cyInfo, 0);
+	m_vecBestSweepers[0].DrawNet(surface, 0, cxInfo/2, cyInfo/2, 0);
+	m_vecBestSweepers[1].DrawNet(surface, cxInfo/2, cxInfo, cyInfo/2, 0);
+	m_vecBestSweepers[2].DrawNet(surface, 0, cxInfo/2, cyInfo, cyInfo/2);
+	m_vecBestSweepers[3].DrawNet(surface, cxInfo/2, cxInfo, cyInfo, cyInfo/2);
 }
 
 //------------------------------------Render()--------------------------------------
@@ -324,12 +348,20 @@ void CController::Render(HDC &surface)
 	if (!m_bFastRender)
 	{   
 		m_vecBestSweepers[m_iViewThisSweeper].RenderReward(surface);
-		string s = "Generation: " + itos(m_iGenerations);
+		string s = "Generation: " + itos(m_iGenerations) + ", Trial: " + itos(m_iTrials + 1) + "/" + itos(CParams::iNumTrials);
+		if (m_iTrials >= m_iReverseTrial) 
+		{
+			s += ", reversed: yes";
+		} 
+		else 
+		{
+			s += ", reversed: no";
+		}
 		TextOut(surface, 5, 0, s.c_str(), s.size());
 
 		//select in the blue pen
 		m_OldPen = (HPEN)SelectObject(surface, m_BluePen);
-		
+
 		if (m_bRenderBest)
 		{  		
 			//render the best sweepers memory cells
@@ -349,7 +381,7 @@ void CController::Render(HDC &surface)
 			RenderSweepers(surface, m_vecSweepers);
 		}
 
-		
+
 
 		SelectObject(surface, m_OldPen);
 
@@ -391,12 +423,13 @@ void CController::RenderSweepers(HDC &surface, vector<CMinesweeper> &sweepers)
 		//if they have crashed into an obstacle draw
 		if ( sweepers[i].Collided())
 		{
-			SelectObject(surface, m_RedPen);
+			SelectObject(surface, m_BlackPen);
 		}
 
 		else
 		{
-			SelectObject(surface, m_BluePen);
+			//SelectObject(surface, m_BluePen);
+			SelectObject(surface, sweepers[i].GetColor());
 		}
 
 		//grab the sweeper vertices
@@ -512,6 +545,9 @@ void CController::PlotStats(HDC surface)const
 	TextOut(surface, 5, 25, s.c_str(), s.size());
 
 	s = "Num Species:          " + itos(m_pPop->NumSpecies());
+	TextOut(surface, 5, 65, s.c_str(), s.size());
+
+	s = "Trial:                " + itos(m_iTrials + 1) + "/" + itos(CParams::iNumTrials);
 	TextOut(surface, 5, 45, s.c_str(), s.size());
 
 	s = "Best Fitness so far: " + ftos(m_pPop->BestEverFitness());

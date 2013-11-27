@@ -42,6 +42,8 @@ private:
 	//direction sweeper is facing
 	SVector2D		m_vLookAt;
 
+	HPEN m_Color;
+
 	//how much it is rotated from its starting position
 	double			m_dRotation;
 
@@ -74,6 +76,9 @@ private:
   // If reward has been collected, stop moving by setting active to false
   bool			m_bActive;
 
+  // If true, rotation output of sweeper is reversed - the plasticity test
+  bool			m_bReverse;
+
   void      CreateSensors(vector<SPoint> &sensors,
                           int            NumSensors,
                           double         range);
@@ -98,6 +103,8 @@ public:
 
 	void			Reset();
 
+	void	ResetTrial();
+
   void      EndOfRunCalculations();
 
   void      RenderStats(HDC surface);
@@ -105,6 +112,8 @@ public:
   void      Render(HDC surface);
 
   void		RenderReward(HDC surface);
+
+  void		SetReset(bool reset);
 
   void      DrawNet(HDC &surface, int cxLeft, int cxRight, int cyTop, int cyBot)
   {
@@ -126,6 +135,8 @@ public:
   vector<double>&   SensorReadings(){return m_vecdSensors;}
 
   bool              Collided()const{return m_bCollided;}
+
+  HPEN				GetColor()const{return m_Color;}
 
   vector<double>    MemoryReadings(){return m_vecFeelers;}
 

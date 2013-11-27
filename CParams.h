@@ -69,6 +69,8 @@ public:
   //number of time steps we allow for each generation to live
   static int    iNumTicks;
 
+  static int    iNumTrials;
+
   //---------------------------------------------------------------------
   //  used in CMapper.h/cpp
   //---------------------------------------------------------------------

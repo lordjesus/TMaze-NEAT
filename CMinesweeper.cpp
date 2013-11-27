@@ -13,6 +13,7 @@ m_dRotation(0),
 
 
 {
+	m_Color = CreatePen(PS_SOLID, 1, RGB(rand() % 205 + 50, rand() % 205 + 50, rand() % 205 + 50));
 	//create a static start position
 	m_vPosition = SVector2D(180, 50);
 
@@ -72,8 +73,48 @@ void CMinesweeper::Reset()
 	//and the rotation
 	m_dRotation = 0;
 
+	m_bReverse = false;
+
 	//reset its memory
 	m_MemoryMap.Reset();
+
+	m_bActive = true;
+}
+
+void CMinesweeper::SetReset(bool reset) 
+{
+	m_bReverse = reset;
+}
+
+void CMinesweeper::ResetTrial() 
+{
+	m_dFitness += m_MemoryMap.TMazeReward();
+	m_vPosition = SVector2D(180, 50);
+	m_dRotation = 0;
+
+	//reset its memory
+	m_MemoryMap.Reset();
+
+	// Flush neural network
+	//this will store all the inputs for the NN
+	vector<double> inputs;	
+
+	//grab sensor readings
+	//	TestSensors(objects);
+
+
+	//input sensors into net
+	for (int sr=0; sr<m_vecdSensors.size(); ++sr)
+	{
+		inputs.push_back(m_vecdSensors[sr]);
+
+		inputs.push_back(m_vecFeelers[sr]);
+	}
+
+	inputs.push_back(m_bCollided);
+
+	//update the brain and get feedback
+	vector<double> output = m_pItsBrain->Update(inputs, CNeuralNet::snapshot);
 
 	m_bActive = true;
 }
@@ -164,9 +205,16 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 		//assign the outputs to the sweepers left & right tracks
 		m_lTrack = output[0];
 		m_rTrack = output[1];
+		if (m_bReverse) 
+		{
+			// Flip the output assigned
+			m_lTrack = output[1];
+			m_rTrack = output[0];
+		}
 
 		//calculate steering forces
 		double RotForce = m_lTrack - m_rTrack;
+
 
 		//clamp rotation
 		Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
@@ -176,6 +224,8 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 		//update Look At 
 		m_vLookAt.x = -sin(m_dRotation);
 		m_vLookAt.y = cos(m_dRotation);
+
+		
 
 		//if the sweepers haven't collided with an obstacle
 		//update their position
@@ -346,7 +396,10 @@ void CMinesweeper::TestRange()
 void CMinesweeper::EndOfRunCalculations()
 {
 	//m_dFitness += m_MemoryMap.NumCellsVisited();
-	m_dFitness += m_MemoryMap.TMazeReward();
+	//m_dFitness += m_MemoryMap.TMazeReward();
+
+	// Fitness is the average reward/fitness over number of trials
+	m_dFitness = m_dFitness / CParams::iNumTrials;
 }
 
 

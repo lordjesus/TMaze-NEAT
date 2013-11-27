@@ -46,6 +46,7 @@ double CParams::dOldAgePenalty            = 0;
 double CParams::dCrossoverRate            = 0;
 int CParams::iMaxNumberOfSpecies          = 0;
 
+int CParams::iNumTrials					  = 4;
 
 
 //this function loads in the parameters from a given file name. Returns
