@@ -69,6 +69,9 @@ private:
 
   HBRUSH      m_RedBrush;
   HBRUSH      m_BlueBrush;
+
+  HBRUSH highBrush;
+  HBRUSH lowBrush;
 	
 	//local copy of the handle to the application window
 	HWND				m_hwndMain;
@@ -105,6 +108,8 @@ private:
   void   RenderSweepers(HDC &surface, vector<CMinesweeper> &sweepers);
   
   void   RenderSensors (HDC &surface, vector<CMinesweeper> &sweepers);
+
+  void   UpdateReverseTrial();
 
 public:
 

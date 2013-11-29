@@ -137,10 +137,7 @@ CController::CController(HWND hwndMain,
 		m_vecBestSweepers.push_back(CMinesweeper());
 	}
 
-	int r = rand() % 3 - 1; // Should be in range [-1, 1] now
-
-	m_iReverseTrial = CParams::iNumTrials / 2 + r;
-	m_iReverseTrial = CParams::iNumTrials / 2;
+	UpdateReverseTrial();
 
 	m_pPop = new Cga(CParams::iPopSize,
 		CParams::iNumInputs,
@@ -168,6 +165,9 @@ CController::CController(HWND hwndMain,
 	//and the brushes
 	m_BlueBrush = CreateSolidBrush(RGB(0,244,244));
 	m_RedBrush  = CreateSolidBrush(RGB(150,0,0));
+
+	highBrush = CreateSolidBrush(RGB(221, 255, 209));
+	lowBrush = CreateSolidBrush(RGB(255, 214, 216));
 
 	//fill the vertex buffers
 	for (i=0; i<NumSweeperVerts; ++i)
@@ -199,6 +199,8 @@ CController::~CController()
 	DeleteObject(m_RedPenDotted);
 	DeleteObject(m_BlueBrush);
 	DeleteObject(m_RedBrush);
+	DeleteObject(highBrush);
+	DeleteObject(lowBrush);
 }
 
 
@@ -252,8 +254,8 @@ bool CController::Update()
 			int i = 0;
 			for (i=0; i<m_NumSweepers; ++i)
 			{						
-					m_vecSweepers[i].ResetTrial();
-					m_vecSweepers[i].SetReset(m_iTrials >= m_iReverseTrial); // Toggle reverse mode when the time is due
+					m_vecSweepers[i].ResetTrial(m_iGenerations);
+					m_vecSweepers[i].SetReverse(m_iTrials >= m_iReverseTrial); // Toggle reverse mode when the time is due
 			}
 
 			//this will call WM_PAINT which will render our scene
@@ -271,7 +273,7 @@ bool CController::Update()
 		{
 			m_vecSweepers[swp].EndOfRunCalculations();
 		}
-
+		UpdateReverseTrial();
 		//increment the generation counter
 		++m_iGenerations;
 		m_iTrials = 0;
@@ -347,7 +349,32 @@ void CController::Render(HDC &surface)
 	//do not render if running at accelerated speed
 	if (!m_bFastRender)
 	{   
-		m_vecBestSweepers[m_iViewThisSweeper].RenderReward(surface);
+		HBRUSH leftBrush;
+		HBRUSH rightBrush;
+
+		if (m_iTrials >= m_iReverseTrial) {
+			leftBrush = highBrush;
+			rightBrush = lowBrush;
+		} else {
+			leftBrush = lowBrush;
+			rightBrush = highBrush;
+		}
+		// Render rewards here
+		// Left side
+		RECT rect;
+		rect.bottom = 360;
+		rect.left = 12;
+		rect.right = 52;
+		rect.top = 280;
+		FillRect(surface, &rect, leftBrush); 
+
+		// Right side
+		rect.bottom = 360;
+		rect.left = 340;
+		rect.right = 380;
+		rect.top = 280;
+		FillRect(surface, &rect, rightBrush);
+		//m_vecBestSweepers[m_iViewThisSweeper].RenderReward(surface);
 		string s = "Generation: " + itos(m_iGenerations) + ", Trial: " + itos(m_iTrials + 1) + "/" + itos(CParams::iNumTrials);
 		if (m_iTrials >= m_iReverseTrial) 
 		{
@@ -393,6 +420,8 @@ void CController::Render(HDC &surface)
 			LineTo(surface, m_ObjectsVB[i+1].x, m_ObjectsVB[i+1].y);
 		}
 
+		
+
 	}//end if
 
 	else
@@ -411,6 +440,14 @@ void CController::Render(HDC &surface)
 	}
 
 }
+
+void CController::UpdateReverseTrial() {
+	int r = rand() % (1 + 2 * CParams::iNumVariation) - CParams::iNumVariation; // Should be in range [-v, v] now
+
+	m_iReverseTrial = CParams::iNumTrials / 2 + r;
+	
+}
+
 //------------------------- RenderSweepers -------------------------------
 //
 //  given a vector of sweepers this function renders them to the screen

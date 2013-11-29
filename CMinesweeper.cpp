@@ -81,14 +81,14 @@ void CMinesweeper::Reset()
 	m_bActive = true;
 }
 
-void CMinesweeper::SetReset(bool reset) 
+void CMinesweeper::SetReverse(bool reverse) 
 {
-	m_bReverse = reset;
+	m_bReverse = reverse;
 }
 
-void CMinesweeper::ResetTrial() 
+void CMinesweeper::ResetTrial(int generation) 
 {
-	m_dFitness += m_MemoryMap.TMazeReward();
+	m_dFitness += generation > 0 ? m_MemoryMap.TMazeReward(m_bReverse) : 0;
 	m_vPosition = SVector2D(180, 50);
 	m_dRotation = 0;
 
@@ -133,9 +133,6 @@ void CMinesweeper::Render(HDC surface)
 
 }
 
-void CMinesweeper::RenderReward(HDC surface) {
-	m_MemoryMap.RenderReward(surface);
-}
 //---------------------WorldTransform--------------------------------
 //
 //	sets up a translation matrix for the sweeper according to its
@@ -205,13 +202,7 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 		//assign the outputs to the sweepers left & right tracks
 		m_lTrack = output[0];
 		m_rTrack = output[1];
-		if (m_bReverse) 
-		{
-			// Flip the output assigned
-			m_lTrack = output[1];
-			m_rTrack = output[0];
-		}
-
+		
 		//calculate steering forces
 		double RotForce = m_lTrack - m_rTrack;
 

@@ -83,7 +83,7 @@ public:
   int     NumCellsVisited()const;
 
   // Returns T-Maze reward
-  double TMazeReward();
+  double TMazeReward(bool reversed);
   
   //returns if the cell at the given position has been visited or
   //not
@@ -92,8 +92,6 @@ public:
   //This method renders any visited cells in shades of red. The
   //darker the red, the more time has been spent at that cell
   void    Render(HDC surface);
-
-  void RenderReward(HDC surface);
 
   void    Reset();
 

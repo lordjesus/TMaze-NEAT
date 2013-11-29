@@ -140,32 +140,6 @@ void CMapper::Render(HDC surface)
 	} 
 }
 
-void CMapper::RenderReward(HDC surface) 
-{
-	for (int x=0; x<m_NumCellsX; ++x)
-	{
-		for (int y= 280 / m_dCellSize; y<m_NumCellsY; ++y)
-		{
-			if (x < 50/m_dCellSize) 
-			{			
-
-				HBRUSH lightbrush = CreateSolidBrush(RGB(200, 200, 200));
-
-				FillRect(surface, &m_2DvecCells[x][y].Cell, lightbrush); 
-
-				DeleteObject(lightbrush);
-			}
-			else if (x > m_NumCellsX - (70 / m_dCellSize)) {
-
-				HBRUSH lightbrush = CreateSolidBrush(RGB(100, 100, 100));
-
-				FillRect(surface, &m_2DvecCells[x][y].Cell, lightbrush); 
-
-				DeleteObject(lightbrush);
-			}
-		}
-	} 
-}
 
 //----------------------------------- Reset ------------------------------
 void CMapper::Reset()
@@ -180,7 +154,7 @@ void CMapper::Reset()
 	}
 }
 
-double CMapper::TMazeReward() {
+double CMapper::TMazeReward(bool reversed) {
 	double reward = 0;
 
 	for (int x = 0; x < m_NumCellsX; x++) {
@@ -191,13 +165,23 @@ double CMapper::TMazeReward() {
 				// Left leg - low reward
 				if (m_2DvecCells[x][y].iTicksSpentHere > 0) {
 					//	reward += m_2DvecCells[x][y].iTicksSpentHere;
-					return 0.1f;
+					if (reversed) {
+						return 1.0f;
+					}
+					else {
+						return 0.1f;
+					}
 				}
 			} else if (x > m_NumCellsX - (70 / m_dCellSize)) {
 				// Right leg - High reward
 				if (m_2DvecCells[x][y].iTicksSpentHere > 0) {
 					//	reward += 5 * m_2DvecCells[x][y].iTicksSpentHere;
-					return 1.0f;
+					if (reversed) {
+						return 0.1f;
+					}
+					else {
+						return 1.0f;
+					}
 				}
 			}
 		}

@@ -47,6 +47,7 @@ double CParams::dCrossoverRate            = 0;
 int CParams::iMaxNumberOfSpecies          = 0;
 
 int CParams::iNumTrials					  = 4;
+int CParams::iNumVariation				  = 1;
 
 
 //this function loads in the parameters from a given file name. Returns
@@ -118,7 +119,10 @@ bool CParams::LoadInParameters(char* szFileName)
   grab >>dCrossoverRate;
   grab >> ParamDescription;
   grab >> iMaxNumberOfSpecies;
-
+  grab >> ParamDescription;
+  grab >> iNumTrials;
+  grab >> ParamDescription;
+  grab >> iNumVariation;
 
   return true;
 }

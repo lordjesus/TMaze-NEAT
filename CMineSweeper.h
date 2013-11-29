@@ -103,7 +103,7 @@ public:
 
 	void			Reset();
 
-	void	ResetTrial();
+	void	ResetTrial(int generation);
 
   void      EndOfRunCalculations();
 
@@ -111,9 +111,7 @@ public:
   
   void      Render(HDC surface);
 
-  void		RenderReward(HDC surface);
-
-  void		SetReset(bool reset);
+  void		SetReverse(bool reverse);
 
   void      DrawNet(HDC &surface, int cxLeft, int cxRight, int cyTop, int cyBot)
   {
