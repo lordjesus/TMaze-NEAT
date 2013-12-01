@@ -112,6 +112,8 @@ void CMinesweeper::ResetTrial(int generation)
 	}
 
 	inputs.push_back(m_bCollided);
+	// Reward
+	inputs.push_back(0);
 
 	//update the brain and get feedback
 	vector<double> output = m_pItsBrain->Update(inputs, CNeuralNet::snapshot);
@@ -189,6 +191,10 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 
 		inputs.push_back(m_bCollided);
 
+		double reward = m_MemoryMap.CheckReward(m_vPosition.x, m_vPosition.y, m_bReverse);
+
+		inputs.push_back(reward);
+
 		//update the brain and get feedback
 		vector<double> output = m_pItsBrain->Update(inputs, CNeuralNet::active);
 
@@ -235,7 +241,7 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 		//update the memory map
 		m_MemoryMap.Update(m_vPosition.x, m_vPosition.y);
 
-		m_bActive = !m_MemoryMap.CheckReward(m_vPosition.x, m_vPosition.y);
+		m_bActive = reward < 0.05;
 
 		return true;
 	}

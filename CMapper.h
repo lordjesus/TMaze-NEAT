@@ -74,7 +74,7 @@ public:
   //at the cell at this position
   void    Update(double xPos, double yPos);
 
-  bool    CheckReward(double xPos, double yPos);
+  double    CheckReward(double xPos, double yPos, bool reversed);
 
   //returns how many ticks have been spent at this cell position
   int     TicksLingered(double xPos, double yPos) const;

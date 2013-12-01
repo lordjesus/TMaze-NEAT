@@ -51,27 +51,39 @@ void CMapper::Update(double xPos, double yPos)
 	return;
 }
 
-bool CMapper::CheckReward(double xPos, double yPos) 
+double CMapper::CheckReward(double xPos, double yPos, bool reversed) 
 {
 	//check to make sure positions are within range
 	if ( (xPos < 0) || (xPos > CParams::WindowWidth) || 
 		(yPos < 0) || (yPos > CParams::WindowHeight) )
 	{
-		return false;
+		return 0;
 	}
 
 	int cellX = (int)(xPos / m_dCellSize );
 	int cellY = (int)(yPos / m_dCellSize );
 
 	if (cellX < 50 / m_dCellSize) {
-		return true;
+		if (reversed) {
+			return 1.0f;
+		}
+		else {
+			return 0.1f;
+		}
+
 	}
 
 	if (cellX > m_NumCellsX - (70 / m_dCellSize)) {
-		return true;
+		if (reversed) {
+			return 0.1f;
+		}
+		else {
+			return 1.0f;
+		}
+
 	}
 
-	return false;
+	return 0;
 }
 
 //---------------------------------------------------------------

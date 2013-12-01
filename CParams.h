@@ -190,7 +190,7 @@ public:
 
     dCollisionDist = (double)(iSweeperScale+1)/dSensorRange;
 
-    iNumInputs  = (iNumSensors * 2) + 1;
+    iNumInputs  = (iNumSensors * 2) + 1 + 1; // Last is reward input
     iNumOutputs = 2;
 
     return true;
