@@ -25,6 +25,7 @@ enum neuron_type
   hidden,
   output,
   bias,
+  modulatory,
   none
 };
 
