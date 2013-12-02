@@ -34,21 +34,21 @@ struct SNeuron;
 //------------------------------------------------------------------------
 struct SLink
 {
-  //pointers to the neurons this link connects
-  SNeuron*  pIn;
-  SNeuron*  pOut;
+	//pointers to the neurons this link connects
+	SNeuron*  pIn;
+	SNeuron*  pOut;
 
-  //the connection weight
-  double  dWeight;
+	//the connection weight
+	double  dWeight;
 
-  //is this link a recurrent link?
-  bool    bRecurrent;
+	//is this link a recurrent link?
+	bool    bRecurrent;
 
-  SLink(double dW, SNeuron* pIn, SNeuron* pOut, bool bRec):dWeight(dW),
-                                                           pIn(pIn),
-                                                           pOut(pOut),
-                                                           bRecurrent(bRec)
-  {}
+	SLink(double dW, SNeuron* pIn, SNeuron* pOut, bool bRec):dWeight(dW),
+		pIn(pIn),
+		pOut(pOut),
+		bRecurrent(bRec)
+	{}
 };
 
 
@@ -58,45 +58,53 @@ struct SLink
 //------------------------------------------------------------------------
 struct SNeuron
 {
-   //all the links coming into this neuron
-  vector<SLink> vecLinksIn;
+	//all the links coming into this neuron
+	vector<SLink> vecLinksIn;
 
-  //and out
-  vector<SLink> vecLinksOut;
+	//and out
+	vector<SLink> vecLinksOut;
 
-  //sum of weights x inputs
-  double        dSumActivation;
+	//sum of weights x inputs
+	double        dSumActivation;
 
-  //the output from this neuron
-  double        dOutput;
+	// sum of modulatory input
+	double		dSumModulatory;
 
-  //what type of neuron is this?
-  neuron_type   NeuronType;
+	double		dLastOutput;
 
-  //its identification number
-  int           iNeuronID;
+	//the output from this neuron
+	double        dOutput;
 
-  //sets the curvature of the sigmoid function
-  double        dActivationResponse;
 
-  //used in visualization of the phenotype
-  int           iPosX,   iPosY;
-  double        dSplitY, dSplitX;
+	//what type of neuron is this?
+	neuron_type   NeuronType;
 
-  //--- ctors
-  SNeuron(neuron_type type,
-          int         id,
-          double      y,
-          double      x,
-          double      ActResponse):NeuronType(type),
-                                   iNeuronID(id),
-                                   dSumActivation(0),
-                                   dOutput(0),
-                                   iPosX(0),
-                                   iPosY(0),
-                                   dSplitY(y),
-                                   dSplitX(x),
-                                   dActivationResponse(ActResponse)
+	//its identification number
+	int           iNeuronID;
+
+	//sets the curvature of the sigmoid function
+	double        dActivationResponse;
+
+	//used in visualization of the phenotype
+	int           iPosX,   iPosY;
+	double        dSplitY, dSplitX;
+
+	//--- ctors
+	SNeuron(neuron_type type,
+		int         id,
+		double      y,
+		double      x,
+		double      ActResponse):NeuronType(type),
+		iNeuronID(id),
+		dSumActivation(0),
+		dSumModulatory(0),
+		dOutput(0),
+		dLastOutput(0),
+		iPosX(0),
+		iPosY(0),
+		dSplitY(y),
+		dSplitX(x),
+		dActivationResponse(ActResponse)
 	{}
 };
 
@@ -108,39 +116,40 @@ class CNeuralNet
 {
 
 private:
-  
-  vector<SNeuron*>  m_vecpNeurons;
 
-  //the depth of the network
-  int               m_iDepth;
+	vector<SNeuron*>  m_vecpNeurons;
 
-  //tidies up the horizontal spacing of neurons
- // void TidyXSplits();
+	//the depth of the network
+	int               m_iDepth;
+
+	//tidies up the horizontal spacing of neurons
+	// void TidyXSplits();
 
 public:
-	
-  
-  CNeuralNet(vector<SNeuron*> neurons,
-             int              depth);
-								
 
-  ~CNeuralNet();
+	bool adaptable;
 
-   //you have to select one of these types when updating the network
-  //If snapshot is chosen the network depth is used to completely
-  //flush the inputs through the network. active just updates the
-  //network each timestep
-  enum run_type{snapshot, active};
+	CNeuralNet(vector<SNeuron*> neurons,
+		int              depth);
 
-  //update network for this clock cycle
-  vector<double>  Update(const vector<double> &inputs, const run_type type);
 
-  //draws a graphical representation of the network to a user speciefied window
-  void            DrawNet(HDC &surface,
-                          int cxLeft,
-                          int cxRight,
-                          int cyTop,
-                          int cyBot);
+	~CNeuralNet();
+
+	//you have to select one of these types when updating the network
+	//If snapshot is chosen the network depth is used to completely
+	//flush the inputs through the network. active just updates the
+	//network each timestep
+	enum run_type{snapshot, active};
+
+	//update network for this clock cycle
+	vector<double>  Update(const vector<double> &inputs, const run_type type);
+
+	//draws a graphical representation of the network to a user speciefied window
+	void            DrawNet(HDC &surface,
+		int cxLeft,
+		int cxRight,
+		int cyTop,
+		int cyBot);
 
 };
 

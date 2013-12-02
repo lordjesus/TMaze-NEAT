@@ -73,6 +73,12 @@ public:
 
   static int	iNumVariation;
 
+  static double dModulatoryChance;
+
+  static int	iAdaptableNumber;
+
+  static bool	bAdaptable;
+
   //---------------------------------------------------------------------
   //  used in CMapper.h/cpp
   //---------------------------------------------------------------------
@@ -192,6 +198,8 @@ public:
 
     iNumInputs  = (iNumSensors * 2) + 1 + 1; // Last is reward input
     iNumOutputs = 2;
+
+	bAdaptable = iAdaptableNumber > 0;
 
     return true;
 

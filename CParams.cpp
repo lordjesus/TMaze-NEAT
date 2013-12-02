@@ -49,6 +49,10 @@ int CParams::iMaxNumberOfSpecies          = 0;
 int CParams::iNumTrials					  = 4;
 int CParams::iNumVariation				  = 1;
 
+int CParams::iAdaptableNumber			  = 1;
+double CParams::dModulatoryChance	      = 0.2;
+
+bool CParams::bAdaptable				  = true;
 
 //this function loads in the parameters from a given file name. Returns
 //false if there is a problem opening the file.
@@ -123,6 +127,10 @@ bool CParams::LoadInParameters(char* szFileName)
   grab >> iNumTrials;
   grab >> ParamDescription;
   grab >> iNumVariation;
+  grab >> ParamDescription;
+  grab >> dModulatoryChance;
+  grab >> ParamDescription;
+  grab >> iAdaptableNumber;
 
   return true;
 }

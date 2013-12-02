@@ -42,6 +42,7 @@ CNeuralNet::~CNeuralNet()
 //
 //	finally returns a std::vector of doubles as the output from the net.
 //------------------------------------------------------------------------
+
 vector<double> CNeuralNet::Update(const vector<double> &inputs,
 	const run_type        type)
 {
@@ -76,6 +77,7 @@ vector<double> CNeuralNet::Update(const vector<double> &inputs,
 		//to the values passed into the function in inputs
 		while (m_vecpNeurons[cNeuron]->NeuronType == input)
 		{
+			m_vecpNeurons[cNeuron]->dLastOutput = m_vecpNeurons[cNeuron]->dOutput;
 			m_vecpNeurons[cNeuron]->dOutput = inputs[cNeuron];
 
 			++cNeuron;
@@ -87,33 +89,77 @@ vector<double> CNeuralNet::Update(const vector<double> &inputs,
 		//then we step through the network a neuron at a time
 		while (cNeuron < m_vecpNeurons.size())
 		{
+			SNeuron* curNeuron = m_vecpNeurons[cNeuron];
 			//this will hold the sum of all the inputs x weights 
 			double sum = 0;
+			curNeuron->dSumActivation = 0;
+			curNeuron->dSumModulatory = 0;
 
 			//sum this neuron's inputs by iterating through all the links into
 			//the neuron
-			for (int lnk=0; lnk<m_vecpNeurons[cNeuron]->vecLinksIn.size(); ++lnk)
+			for (int lnk=0; lnk<curNeuron->vecLinksIn.size(); ++lnk)
 			{
+				SLink synapse = curNeuron->vecLinksIn[lnk];
 				//get this link's weight
-				double Weight = m_vecpNeurons[cNeuron]->vecLinksIn[lnk].dWeight;
+				double Weight = synapse.dWeight;
 
 				//get the output from the neuron this link is coming from
-				double NeuronOutput =
-					m_vecpNeurons[cNeuron]->vecLinksIn[lnk].pIn->dOutput;
+				double NeuronOutput = synapse.pIn->dOutput;
 
 				//add to sum
 				sum += Weight * NeuronOutput;
+
+				if (synapse.pIn->NeuronType == modulatory) {
+					// Modularoty input
+					curNeuron->dSumModulatory += Weight * NeuronOutput;
+				} else {
+					// Standard input
+					curNeuron->dSumActivation += Weight * NeuronOutput;
+				}
 			}
 
 			//now put the sum through the activation function and assign the 
 			//value to this neuron's output
-			m_vecpNeurons[cNeuron]->dOutput = 
-				Sigmoid(sum, m_vecpNeurons[cNeuron]->dActivationResponse);
+			curNeuron->dLastOutput = curNeuron->dOutput;
+			curNeuron->dOutput = Sigmoid(curNeuron->dSumActivation, curNeuron->dActivationResponse);
 
-			if (m_vecpNeurons[cNeuron]->NeuronType == output)
+			if (CParams::bAdaptable && curNeuron->dSumModulatory != 0) {
+				double modStrength = Sigmoid(curNeuron->dSumModulatory, curNeuron->dActivationResponse);
+
+				for (int lnk=0; lnk<curNeuron->vecLinksIn.size(); ++lnk)
+				{
+					SLink synapse = curNeuron->vecLinksIn[lnk];
+					if (synapse.pIn->NeuronType != modulatory) {
+						// Update weights of non-modulatory connections
+						double A=0, B=0, C=-0.38, D=0, learningrate = -94.6;
+
+						double pre, post;
+
+						if (synapse.bRecurrent) {
+							pre = synapse.pIn->dLastOutput;
+							post = synapse.pOut->dOutput;
+						}
+						else {
+							pre = synapse.pIn->dOutput;
+							post = synapse.pOut->dOutput;
+						}
+
+						double delta = modStrength * learningrate * (A * pre * post + B * pre + C * post + D);
+						synapse.dWeight += delta;
+
+						if (synapse.dWeight > 10) {
+							synapse.dWeight = 10;
+						} else if (synapse.dWeight < -10) {
+							synapse.dWeight = -10;
+						}
+					}
+				}
+			} 
+
+			if (curNeuron->NeuronType == output)
 			{
 				//add to our outputs
-				outputs.push_back(m_vecpNeurons[cNeuron]->dOutput);
+				outputs.push_back(curNeuron->dOutput);
 			}
 
 			//next neuron
@@ -140,6 +186,105 @@ vector<double> CNeuralNet::Update(const vector<double> &inputs,
 	//return the outputs
 	return outputs;
 }
+
+//vector<double> CNeuralNet::Update(const vector<double> &inputs,
+//	const run_type        type)
+//{
+//	//create a vector to put the outputs into
+//	vector<double>	outputs;
+//
+//	//if the mode is snapshot then we reqµìre all the neurons to be
+//	//iterated through as many times as the network is deep. If the 
+//	//mode is set to active the method can return an output after
+//	//just one iteration
+//	int FlushCount = 0;
+//
+//	if (type == snapshot)
+//	{
+//		FlushCount = m_iDepth;
+//	}
+//	else
+//	{
+//		FlushCount = 1;
+//	}
+//
+//	//iterate through the network FlushCount times
+//	for (int i=0; i<FlushCount; ++i)
+//	{
+//		//clear the output vector
+//		outputs.clear();
+//
+//		//this is an index into the current neuron
+//		int cNeuron = 0;
+//
+//		//first set the outputs of the 'input' neurons to be equal
+//		//to the values passed into the function in inputs
+//		while (m_vecpNeurons[cNeuron]->NeuronType == input)
+//		{
+//			m_vecpNeurons[cNeuron]->dOutput = inputs[cNeuron];
+//
+//			++cNeuron;
+//		}
+//
+//		//set the output of the bias to 1
+//		m_vecpNeurons[cNeuron++]->dOutput = 1;
+//
+//		//then we step through the network a neuron at a time
+//		while (cNeuron < m_vecpNeurons.size())
+//		{
+//			//this will hold the sum of all the inputs x weights 
+//			double sum = 0;
+//
+//			//sum this neuron's inputs by iterating through all the links into
+//			//the neuron
+//			for (int lnk=0; lnk<m_vecpNeurons[cNeuron]->vecLinksIn.size(); ++lnk)
+//			{
+//				//get this link's weight
+//				double Weight = m_vecpNeurons[cNeuron]->vecLinksIn[lnk].dWeight;
+//
+//				//get the output from the neuron this link is coming from
+//				double NeuronOutput =
+//					m_vecpNeurons[cNeuron]->vecLinksIn[lnk].pIn->dOutput;
+//
+//				//add to sum
+//				sum += Weight * NeuronOutput;
+//			}
+//
+//			//now put the sum through the activation function and assign the 
+//			//value to this neuron's output
+//			m_vecpNeurons[cNeuron]->dOutput = 
+//				Sigmoid(sum, m_vecpNeurons[cNeuron]->dActivationResponse);
+//
+//			if (m_vecpNeurons[cNeuron]->NeuronType == output)
+//			{
+//				//add to our outputs
+//				outputs.push_back(m_vecpNeurons[cNeuron]->dOutput);
+//			}
+//
+//			//next neuron
+//			++cNeuron;
+//		}
+//
+//	}//next iteration through the network
+//
+//#if 1
+//
+//	//the network needs to be flushed if this type of update is performed otherwise
+//	//it is possible for dependencies to be built on the order the training data is
+//	//presented
+//	if (type == snapshot)
+//	{
+//		for (int n=0; n<m_vecpNeurons.size(); ++n)
+//		{
+//			m_vecpNeurons[n]->dOutput = 0;
+//		}
+//	}
+//
+//#endif
+//
+//	//return the outputs
+//	return outputs;
+//}
 
 
 //----------------------------- TidyXSplits -----------------------------
@@ -238,6 +383,7 @@ void CNeuralNet::DrawNet(HDC &surface, int Left, int Right, int Top, int Bottom)
 	HPEN GreyPen  = CreatePen(PS_SOLID, 1, RGB(200, 200, 200));
 	HPEN RedPen   = CreatePen(PS_SOLID, 1, RGB(255, 0, 0));
 	HPEN GreenPen = CreatePen(PS_SOLID, 1, RGB(0, 200, 0));
+
 	HPEN OldPen   = NULL;
 
 	//create a solid brush
@@ -285,17 +431,23 @@ void CNeuralNet::DrawNet(HDC &surface, int Left, int Right, int Top, int Bottom)
 
 				HPEN Pen;
 
-				//create a yellow pen for inhibitory weights
-				if (m_vecpNeurons[cNeuron]->vecLinksOut[cLnk].dWeight <= 0)
-				{
-					Pen  = CreatePen(PS_SOLID, thickness, RGB(240, 230, 170));
+				if (m_vecpNeurons[cNeuron]->NeuronType == modulatory) {
+					Pen  = CreatePen(PS_SOLID, 1, RGB(0, 0, 250));
+				}
+				else {
+					//create a yellow pen for inhibitory weights
+					if (m_vecpNeurons[cNeuron]->vecLinksOut[cLnk].dWeight <= 0)
+					{
+						Pen  = CreatePen(PS_SOLID, thickness, RGB(240, 230, 170));
+					}
+
+					//grey for excitory
+					else
+					{
+						Pen  = CreatePen(PS_SOLID, thickness, RGB(200, 200, 200));
+					}
 				}
 
-				//grey for excitory
-				else
-				{
-					Pen  = CreatePen(PS_SOLID, thickness, RGB(200, 200, 200));
-				}
 
 				HPEN tempPen = (HPEN)SelectObject(surface, Pen);
 
