@@ -97,6 +97,10 @@ private:
 	// The trial where the reward is reversed
 	int m_iReverseTrial;
 
+	DWORD lastTime;
+
+	int elapsed;
+
   //local copy of the client window dimensions
   int         m_cxClient, m_cyClient;
 

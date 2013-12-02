@@ -83,23 +83,23 @@ const SPoint objects[NumObjectVerts] = {SPoint(150,15),
 	SPoint(230,15),
 	SPoint(230,15),
 
-	SPoint(230, 280),
-	SPoint(230, 280),
+	SPoint(230, 100),
+	SPoint(230, 100),
 
-	SPoint(380, 280),
-	SPoint(380, 280),
+	SPoint(300, 100),
+	SPoint(300, 100),
 
-	SPoint(380,360),
-	SPoint(380,360), 
+	SPoint(300,170),
+	SPoint(300,170), 
 
-	SPoint(12,360),
-	SPoint(12,360),                                       
+	SPoint(80,170),
+	SPoint(80,170),                                       
 
-	SPoint(12, 280),
-	SPoint(12, 280),
+	SPoint(80, 100),
+	SPoint(80, 100),
 
-	SPoint(150, 280),
-	SPoint(150, 280),
+	SPoint(150, 100),
+	SPoint(150, 100),
 
 	SPoint(150,15)};
 
@@ -276,6 +276,9 @@ bool CController::Update()
 		UpdateReverseTrial();
 		//increment the generation counter
 		++m_iGenerations;
+		DWORD timeNow = GetTickCount();
+		elapsed = timeNow - lastTime;
+		lastTime = timeNow;
 		m_iTrials = 0;
 
 		//reset cycles
@@ -362,17 +365,17 @@ void CController::Render(HDC &surface)
 		// Render rewards here
 		// Left side
 		RECT rect;
-		rect.bottom = 360;
-		rect.left = 12;
-		rect.right = 52;
-		rect.top = 280;
+		rect.bottom = 170;
+		rect.left = 80;
+		rect.right = 120;
+		rect.top = 100;
 		FillRect(surface, &rect, leftBrush); 
 
 		// Right side
-		rect.bottom = 360;
-		rect.left = 340;
-		rect.right = 380;
-		rect.top = 280;
+		rect.bottom = 170;
+		rect.left = 260;
+		rect.right = 300;
+		rect.top = 100;
 		FillRect(surface, &rect, rightBrush);
 		//m_vecBestSweepers[m_iViewThisSweeper].RenderReward(surface);
 		string s = "Generation: " + itos(m_iGenerations) + ", Trial: " + itos(m_iTrials + 1) + "/" + itos(CParams::iNumTrials);
@@ -589,6 +592,9 @@ void CController::PlotStats(HDC surface)const
 
 	s = "Best Fitness so far: " + ftos(m_pPop->BestEverFitness());
 	TextOut(surface, 5, 5, s.c_str(), s.size());
+
+	s = "Generation time:          " + itos(elapsed);
+	TextOut(surface, 5, 85, s.c_str(), s.size());
 }
 
 

@@ -84,6 +84,8 @@ public:
 
   // Returns T-Maze reward
   double TMazeReward(bool reversed);
+
+  double TMazeRewardF(bool reversed, double xPos, double yPos);
   
   //returns if the cell at the given position has been visited or
   //not

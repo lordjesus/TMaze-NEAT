@@ -63,7 +63,7 @@ double CMapper::CheckReward(double xPos, double yPos, bool reversed)
 	int cellX = (int)(xPos / m_dCellSize );
 	int cellY = (int)(yPos / m_dCellSize );
 
-	if (cellX < 50 / m_dCellSize) {
+	if (cellX < 120 / m_dCellSize) {
 		if (reversed) {
 			return 1.0f;
 		}
@@ -73,7 +73,7 @@ double CMapper::CheckReward(double xPos, double yPos, bool reversed)
 
 	}
 
-	if (cellX > m_NumCellsX - (70 / m_dCellSize)) {
+	if (cellX > (260 / m_dCellSize)) {
 		if (reversed) {
 			return 0.1f;
 		}
@@ -173,7 +173,7 @@ double CMapper::TMazeReward(bool reversed) {
 		for (int y= 280 / m_dCellSize; y<m_NumCellsY; ++y) 
 		{
 			// Inefficient - I know
-			if (x < 50/m_dCellSize) {
+			if (x < 101/m_dCellSize) {
 				// Left leg - low reward
 				if (m_2DvecCells[x][y].iTicksSpentHere > 0) {
 					//	reward += m_2DvecCells[x][y].iTicksSpentHere;
@@ -184,7 +184,7 @@ double CMapper::TMazeReward(bool reversed) {
 						return 0.1f;
 					}
 				}
-			} else if (x > m_NumCellsX - (70 / m_dCellSize)) {
+			} else if (x > (259 / m_dCellSize)) {
 				// Right leg - High reward
 				if (m_2DvecCells[x][y].iTicksSpentHere > 0) {
 					//	reward += 5 * m_2DvecCells[x][y].iTicksSpentHere;
@@ -199,6 +199,32 @@ double CMapper::TMazeReward(bool reversed) {
 		}
 	}
 	return reward;
+}
+
+double CMapper::TMazeRewardF(bool reversed, double xPos, double yPos) {
+	int cellX = (int)(xPos / m_dCellSize );
+	int cellY = (int)(yPos / m_dCellSize );
+
+	if (cellX < 120 / m_dCellSize) {
+		if (reversed) {
+			return 1.0f;
+		}
+		else {
+			return 0.1f;
+		}
+
+	}
+
+	if (cellX > (260 / m_dCellSize)) {
+		if (reversed) {
+			return 0.1f;
+		}
+		else {
+			return 1.0f;
+		}
+
+	}
+	return 0;
 }
 
 int CMapper::NumCellsVisited() const

@@ -88,7 +88,8 @@ void CMinesweeper::SetReverse(bool reverse)
 
 void CMinesweeper::ResetTrial(int generation) 
 {
-	m_dFitness += generation > 0 ? m_MemoryMap.TMazeReward(m_bReverse) : 0;
+	m_dFitness += generation > 0 ? m_MemoryMap.TMazeRewardF(m_bReverse, m_vPosition.x, m_vPosition.y) : 0;
+	//m_dFitness += generation > 0 ? m_MemoryMap.TMazeReward(m_bReverse) : 0;
 	m_vPosition = SVector2D(180, 50);
 	m_dRotation = 0;
 
@@ -229,6 +230,8 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 		if (!m_bCollided)
 		{
 			m_dSpeed = m_lTrack + m_rTrack;
+
+			m_dSpeed *= 2;
 
 			//update position
 			m_vPosition += (m_vLookAt * m_dSpeed);
