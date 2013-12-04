@@ -76,6 +76,8 @@ public:
 
   double    CheckReward(double xPos, double yPos, bool reversed);
 
+  double	CheckTurningPoint(double xPos, double yPos);
+
   //returns how many ticks have been spent at this cell position
   int     TicksLingered(double xPos, double yPos) const;
 

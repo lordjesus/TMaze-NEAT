@@ -51,6 +51,17 @@ void CMapper::Update(double xPos, double yPos)
 	return;
 }
 
+double CMapper::CheckTurningPoint(double xPos, double yPos)
+{
+	if(yPos < 0 || yPos > CParams::WindowHeight) return 0;
+	int cellX = (int)(xPos / m_dCellSize );
+	int cellY = (int)(yPos / m_dCellSize );
+	if(cellX  > 100 / m_dCellSize && cellX < 240 / m_dCellSize && cellY > 100 / m_dCellSize) {
+		return 1;
+	}
+	return 0;
+}
+
 double CMapper::CheckReward(double xPos, double yPos, bool reversed) 
 {
 	//check to make sure positions are within range
@@ -62,6 +73,8 @@ double CMapper::CheckReward(double xPos, double yPos, bool reversed)
 
 	int cellX = (int)(xPos / m_dCellSize );
 	int cellY = (int)(yPos / m_dCellSize );
+
+	if(cellY < 100 / m_dCellSize) return 0;
 
 	if (cellX < 120 / m_dCellSize) {
 		if (reversed) {

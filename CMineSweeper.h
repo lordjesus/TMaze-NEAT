@@ -50,7 +50,7 @@ private:
 	double			m_dSpeed;
 
 	//to store output from the ANN
-	double			m_lTrack, m_rTrack;
+	double			m_lTrack;//, m_rTrack;
 
 	//the sweepers fitness score. 
 	double			m_dFitness;

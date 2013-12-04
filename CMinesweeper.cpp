@@ -6,7 +6,7 @@
 CMinesweeper::CMinesweeper():
 m_dRotation(0),
 	m_lTrack(0),
-	m_rTrack(0),
+	//m_rTrack(0),
 	m_dFitness(0),
 	m_dScale(CParams::iSweeperScale),
 	m_bCollided(false)
@@ -116,6 +116,8 @@ void CMinesweeper::ResetTrial(int generation)
 	// Reward
 	inputs.push_back(0);
 
+	// Turning point
+	inputs.push_back(0);
 	//update the brain and get feedback
 	vector<double> output = m_pItsBrain->Update(inputs, CNeuralNet::snapshot);
 
@@ -196,6 +198,10 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 
 		inputs.push_back(reward);
 
+		double turningPoint = m_MemoryMap.CheckTurningPoint(m_vPosition.x, m_vPosition.y);
+
+		inputs.push_back(turningPoint);
+
 		//update the brain and get feedback
 		vector<double> output = m_pItsBrain->Update(inputs, CNeuralNet::active);
 
@@ -207,31 +213,32 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 		}
 
 		//assign the outputs to the sweepers left & right tracks
-		m_lTrack = output[0];
-		m_rTrack = output[1];
+		m_lTrack = output[0] * 2 - 1;
+		//m_rTrack = output[1];
 		
 		//calculate steering forces
-		double RotForce = m_lTrack - m_rTrack;
+		//double RotForce = m_lTrack - m_rTrack;
 
 
 		//clamp rotation
-		Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
+		//Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
 
-		m_dRotation += RotForce;
+		if(m_lTrack < -0.3) m_dRotation = 0;//3.14159265358979;//3.14159265358979f * (3.0 / 2.0);
+		else if(m_lTrack > 0.3) m_dRotation = 3.1415926358979f * 0.5;
+		else m_dRotation = 3.1415926358979f * 1.5;
 
 		//update Look At 
 		m_vLookAt.x = -sin(m_dRotation);
 		m_vLookAt.y = cos(m_dRotation);
-
 		
 
 		//if the sweepers haven't collided with an obstacle
 		//update their position
 		if (!m_bCollided)
 		{
-			m_dSpeed = m_lTrack + m_rTrack;
+			m_dSpeed = 2;// + m_rTrack;
 
-			m_dSpeed *= 2;
+			//m_dSpeed *= 2;
 
 			//update position
 			m_vPosition += (m_vLookAt * m_dSpeed);
