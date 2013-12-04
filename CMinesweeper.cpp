@@ -109,7 +109,7 @@ void CMinesweeper::ResetTrial(int generation)
 	{
 		inputs.push_back(m_vecdSensors[sr]);
 
-		inputs.push_back(m_vecFeelers[sr]);
+	//	inputs.push_back(m_vecFeelers[sr]);
 	}
 
 	inputs.push_back(m_bCollided);
@@ -189,7 +189,7 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 		{
 			inputs.push_back(m_vecdSensors[sr]);
 
-			inputs.push_back(m_vecFeelers[sr]);
+		//	inputs.push_back(m_vecFeelers[sr]); // No need for feelers
 		}
 
 		inputs.push_back(m_bCollided);
