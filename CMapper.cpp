@@ -215,6 +215,9 @@ double CMapper::TMazeReward(bool reversed) {
 }
 
 double CMapper::TMazeRewardF(bool reversed, double xPos, double yPos) {
+	if (yPos < 100) {
+		return 0;
+	}
 	int cellX = (int)(xPos / m_dCellSize );
 	int cellY = (int)(yPos / m_dCellSize );
 

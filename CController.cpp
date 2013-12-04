@@ -138,7 +138,8 @@ CController::CController(HWND hwndMain,
 	}
 
 	UpdateReverseTrial();
-
+	joeEverChanged = false;
+	joeChanged = false;
 	m_pPop = new Cga(CParams::iPopSize,
 		CParams::iNumInputs,
 		CParams::iNumOutputs);
@@ -250,14 +251,22 @@ bool CController::Update()
 			// Reset sweepers for next trial - do not change their networks!
 			m_iTicks = 0;
 			m_iTrials++;
-
+			
+			int oldJoe = joeSum;
+			joeSum = 0;
 			int i = 0;
 			for (i=0; i<m_NumSweepers; ++i)
 			{						
-					m_vecSweepers[i].ResetTrial(m_iGenerations);
+				    joeSum += m_vecSweepers[i].ResetTrial(m_iGenerations);
 					m_vecSweepers[i].SetReverse(m_iTrials >= m_iReverseTrial); // Toggle reverse mode when the time is due
 			}
-
+			if (m_iGenerations > 0 && m_iTrials > 1) 
+			{
+				joeChanged = joeChanged || oldJoe != joeSum;
+				if (joeChanged) {
+					joeEverChanged = true;
+				}
+			}
 			//this will call WM_PAINT which will render our scene
 			InvalidateRect(m_hwndInfo, NULL, TRUE);
 			UpdateWindow(m_hwndInfo);
@@ -276,6 +285,7 @@ bool CController::Update()
 		UpdateReverseTrial();
 		//increment the generation counter
 		++m_iGenerations;
+		joeChanged = false;
 		DWORD timeNow = GetTickCount();
 		elapsed = timeNow - lastTime;
 		lastTime = timeNow;
@@ -595,6 +605,15 @@ void CController::PlotStats(HDC surface)const
 
 	s = "Generation time:          " + itos(elapsed);
 	TextOut(surface, 5, 85, s.c_str(), s.size());
+
+	s = "Balance:          " + itos(joeSum);
+	TextOut(surface, 5, 105, s.c_str(), s.size());
+
+	s = "Did it change?:          " + (joeChanged ? string("OMG YESSS!") : string("No..."));
+	TextOut(surface, 5, 125, s.c_str(), s.size());
+
+	s = "Did it ever change?:          " + (joeEverChanged ? string("OMG YESSS!") : string("No..."));
+	TextOut(surface, 5, 145, s.c_str(), s.size());
 }
 
 

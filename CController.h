@@ -104,6 +104,12 @@ private:
   //local copy of the client window dimensions
   int         m_cxClient, m_cyClient;
 
+  int joeSum;
+
+  bool joeChanged;
+
+  bool joeEverChanged;
+
   //this is the sweeper who's memory cells are displayed
   int         m_iViewThisSweeper;
 

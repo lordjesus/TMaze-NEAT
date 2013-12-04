@@ -39,23 +39,33 @@ void CMinesweeper::CreateSensors(vector<SPoint> &sensors,
 	//make sure vector of sensors is empty before proceeding
 	sensors.clear();
 
-	double SegmentAngle = CParams::dPi / (NumSensors-1);
+	//double SegmentAngle = CParams::dPi / (NumSensors-1);
 
-	//going clockwise from 90deg left of position calculate the fan of
-	//points radiating out (not including the origin)
-	for (int i=0; i<CParams::iNumSensors; i++)
-	{
-		//calculate vertex position
-		SPoint point;
+	////going clockwise from 90deg left of position calculate the fan of
+	////points radiating out (not including the origin)
+	//for (int i=0; i<CParams::iNumSensors; i++)
+	//{
+	//	//calculate vertex position
+	//	SPoint point;
 
-		point.x = -sin(i * SegmentAngle - CParams::dHalfPi) * range;
+	//	point.x = -sin(i * SegmentAngle - CParams::dHalfPi) * range;
 
-		point.y = cos(i * SegmentAngle - CParams::dHalfPi) * range;
+	//	point.y = cos(i * SegmentAngle - CParams::dHalfPi) * range;
 
-		sensors.push_back(point);
+	//	sensors.push_back(point);
 
-	}//next segment
+	//}//next segment
+	SPoint point;
+	point.x = -sin((double)-0.5235) * range;
+	point.y = cos((double)-0.5235) * range;
 
+	sensors.push_back(point);
+
+	SPoint point2;
+	point2.x = -sin((double)0.5235) * range;
+	point2.y = cos((double)0.5235) * range;
+
+	sensors.push_back(point2);
 }
 //-----------------------------Reset()------------------------------------
 //
@@ -86,9 +96,10 @@ void CMinesweeper::SetReverse(bool reverse)
 	m_bReverse = reverse;
 }
 
-void CMinesweeper::ResetTrial(int generation) 
+int CMinesweeper::ResetTrial(int generation) 
 {
-	m_dFitness += generation > 0 ? m_MemoryMap.TMazeRewardF(m_bReverse, m_vPosition.x, m_vPosition.y) : 0;
+	double reward = m_MemoryMap.TMazeRewardF(m_bReverse, m_vPosition.x, m_vPosition.y);
+	m_dFitness += generation > 0 ? reward : 0;
 	//m_dFitness += generation > 0 ? m_MemoryMap.TMazeReward(m_bReverse) : 0;
 	m_vPosition = SVector2D(180, 50);
 	m_dRotation = 0;
@@ -122,6 +133,24 @@ void CMinesweeper::ResetTrial(int generation)
 	vector<double> output = m_pItsBrain->Update(inputs, CNeuralNet::snapshot);
 
 	m_bActive = true;
+	if (reward < 0.01) {
+		return 0;
+	}
+	if (m_bReverse) {
+		if (reward > 0.9) {
+			return -1;
+		}
+		else {
+			return 1;
+		}
+	} else {
+		if (reward > 0.9) {
+			return 1;
+		}
+		else {
+			return -1;
+		}
+	}
 }
 
 //------------------------- RenderMemory ---------------------------------
@@ -196,6 +225,13 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 
 		double reward = m_MemoryMap.CheckReward(m_vPosition.x, m_vPosition.y, m_bReverse);
 
+		if (reward > 0.9) {
+			reward = 0.1;
+		}
+		else if (reward > 0) {
+			reward = 1;
+		}
+
 		inputs.push_back(reward);
 
 		double turningPoint = m_MemoryMap.CheckTurningPoint(m_vPosition.x, m_vPosition.y);
@@ -213,9 +249,9 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 		}
 
 		//assign the outputs to the sweepers left & right tracks
-		m_lTrack = output[0] * 2 - 1;
+	//	m_lTrack = output[0] * 2 - 1;
 		//m_rTrack = output[1];
-		
+		m_lTrack = output[0] * 2 - 1;
 		//calculate steering forces
 		//double RotForce = m_lTrack - m_rTrack;
 
@@ -223,9 +259,11 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 		//clamp rotation
 		//Clamp(RotForce, -CParams::dMaxTurnRate, CParams::dMaxTurnRate);
 
-		if(m_lTrack < -0.3) m_dRotation = 0;//3.14159265358979;//3.14159265358979f * (3.0 / 2.0);
-		else if(m_lTrack > 0.3) m_dRotation = 3.1415926358979f * 0.5;
-		else m_dRotation = 3.1415926358979f * 1.5;
+		//if(m_lTrack < -0.3) m_dRotation = 0;//3.14159265358979;//3.14159265358979f * (3.0 / 2.0);
+		//else if(m_lTrack > 0.3) m_dRotation = 3.1415926358979f * 0.5;
+		//else m_dRotation = 3.1415926358979f * 1.5;
+
+		m_dRotation += m_lTrack;
 
 		//update Look At 
 		m_vLookAt.x = -sin(m_dRotation);
@@ -314,60 +352,30 @@ void CMinesweeper::TestSensors(vector<SPoint> &objects)
 			m_vecdSensors.push_back(-1);
 		} 
 
-		//check how many times the minesweeper has visited the cell
-		//at the current position
-		int HowOften = m_MemoryMap.TicksLingered(m_tranSensors[sr].x,
-			m_tranSensors[sr].y);
-
-
-		//Update the memory info according to HowOften. The maximum
-		//value is 1 (because we want all the inputs into the
-		//ANN to be scaled between -1 < n < 1)
-		if (HowOften == 0)
-		{
-			m_vecFeelers.push_back(-1);
-
-			continue;
-		}
-
-		if (HowOften < 10) 
-		{
-			m_vecFeelers.push_back(0);
-
-			continue;
-		}
-
-		if (HowOften < 20)
-		{
-			m_vecFeelers.push_back(0.2);
-
-			continue;
-		}
-
-		if (HowOften < 30)
-		{
-			m_vecFeelers.push_back(0.4);
-
-			continue;
-		}
-
-		if (HowOften < 50)
-		{
-			m_vecFeelers.push_back(0.6);
-
-			continue;
-		}
-
-		if (HowOften < 80) 
-		{
-			m_vecFeelers.push_back(0.8);
-
-			continue;
-		}
-
-		m_vecFeelers.push_back(1);   
+		 
 
 	}//next sensor
+
+	if (!m_bCollided) {
+		if (m_vPosition.y < 15) {
+			m_bCollided = true;
+			return;
+		}
+		if (m_vPosition.y > 170) {
+			m_bCollided = true;
+			return;
+		}
+		if (m_vPosition.y < 100) {
+			if (m_vPosition.x > 230) {
+				m_bCollided = true;
+				return;
+			}
+			if (m_vPosition.x < 150) {
+				m_bCollided = true;
+				return;
+			}
+		}
+	}
 }
 
 //-------------------------------- TestRange -----------------------------

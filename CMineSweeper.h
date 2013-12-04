@@ -103,7 +103,7 @@ public:
 
 	void			Reset();
 
-	void	ResetTrial(int generation);
+	int	ResetTrial(int generation);
 
   void      EndOfRunCalculations();
 
