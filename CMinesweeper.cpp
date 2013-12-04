@@ -123,7 +123,7 @@ int CMinesweeper::ResetTrial(int generation)
 	//	inputs.push_back(m_vecFeelers[sr]);
 	}
 
-	inputs.push_back(m_bCollided);
+//	inputs.push_back(m_bCollided);
 	// Reward
 	inputs.push_back(0);
 
@@ -221,7 +221,7 @@ bool CMinesweeper::Update(vector<SPoint> &objects)
 		//	inputs.push_back(m_vecFeelers[sr]); // No need for feelers
 		}
 
-		inputs.push_back(m_bCollided);
+	//	inputs.push_back(m_bCollided);
 
 		double reward = m_MemoryMap.CheckReward(m_vPosition.x, m_vPosition.y, m_bReverse);
 

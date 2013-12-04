@@ -196,7 +196,7 @@ public:
 
     dCollisionDist = (double)(iSweeperScale+1)/dSensorRange;
 
-    iNumInputs  = (iNumSensors) + 1 + 2; // Last is reward input + turning point input
+    iNumInputs  = (iNumSensors) + 1 + 1; // Last is reward input + turning point input - removed mbCollided
     iNumOutputs = 1; // now only one output; left/right
 
 	bAdaptable = iAdaptableNumber > 0;
