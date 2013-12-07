@@ -12,7 +12,7 @@
 
 ///////////////////////GLOBALS ////////////////////////////////////
 
-char*			szApplicationName     = "NEAT minesweepers";
+char*			szApplicationName     = "NEAT minesweepers 2";
 char*			szWindowClassName     = "sweeper";
 char*     szInfoWindowClassName = "Info Window";
 

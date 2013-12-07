@@ -79,6 +79,8 @@ public:
 
   static bool	bAdaptable;
 
+  static double dA, dB, dC, dD, dLearningRate;
+
   //---------------------------------------------------------------------
   //  used in CMapper.h/cpp
   //---------------------------------------------------------------------

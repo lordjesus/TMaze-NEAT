@@ -54,6 +54,13 @@ double CParams::dModulatoryChance	      = 0.2;
 
 bool CParams::bAdaptable				  = true;
 
+double CParams::dA					      = 0;
+double CParams::dB						  = 0;
+double CParams::dC						  = -0.38;
+double CParams::dD						  = 0;
+double CParams::dLearningRate			  = -94.6;
+
+
 //this function loads in the parameters from a given file name. Returns
 //false if there is a problem opening the file.
 bool CParams::LoadInParameters(char* szFileName)
@@ -131,6 +138,16 @@ bool CParams::LoadInParameters(char* szFileName)
   grab >> dModulatoryChance;
   grab >> ParamDescription;
   grab >> iAdaptableNumber;
+   grab >> ParamDescription;
+  grab >> dA;
+   grab >> ParamDescription;
+  grab >> dB;
+   grab >> ParamDescription;
+  grab >> dC;
+   grab >> ParamDescription;
+  grab >> dD;
+   grab >> ParamDescription;
+  grab >> dLearningRate;
 
   return true;
 }

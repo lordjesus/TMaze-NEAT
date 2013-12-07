@@ -179,7 +179,7 @@ vector<double> CNeuralNet::Update(const vector<double> &inputs,
 								SLink synapse = curNeuron->vecLinksIn[lnk];
 								if (synapse.pIn->NeuronType != modulatory) {
 									// Update weights of non-modulatory connections
-									double A=0, B=0, C=-0.38, D=0, learningrate = -94.6;
+									double A=CParams::dA, B=CParams::dB, C=CParams::dC, D=CParams::dD, learningrate = CParams::dLearningRate;
 
 									double pre, post;
 
