@@ -93,7 +93,7 @@ vector<double> CNeuralNet::Update(const vector<double> &inputs,
 			//this will hold the sum of all the inputs x weights 
 			double sum = 0;
 			curNeuron->dSumActivation = 0;
-			curNeuron->dSumModulatory = 0;
+			curNeuron->dSumModulatory = 1;
 
 			//sum this neuron's inputs by iterating through all the links into
 			//the neuron
@@ -107,7 +107,7 @@ vector<double> CNeuralNet::Update(const vector<double> &inputs,
 				double NeuronOutput = synapse.pIn->dOutput;
 
 				//add to sum
-				sum += Weight * NeuronOutput;
+				//sum += Weight * NeuronOutput;
 
 				if (synapse.pIn->NeuronType == modulatory) {
 					// Modularoty input
@@ -117,44 +117,34 @@ vector<double> CNeuralNet::Update(const vector<double> &inputs,
 					curNeuron->dSumActivation += Weight * NeuronOutput;
 				}
 			}
+			cNeuron++;
+		}
+		
+		//this is an index into the current neuron
+		cNeuron = 0;
 
+		//first set the outputs of the 'input' neurons to be equal
+		//to the values passed into the function in inputs
+		while (m_vecpNeurons[cNeuron]->NeuronType == input)
+		{
+			/*	m_vecpNeurons[cNeuron]->dLastOutput = m_vecpNeurons[cNeuron]->dOutput;
+			m_vecpNeurons[cNeuron]->dOutput = inputs[cNeuron];*/
+
+			++cNeuron;
+		}
+
+		//set the output of the bias to 1
+		//m_vecpNeurons[cNeuron++]->dOutput = 1;
+		cNeuron++;
+
+		//then we step through the network a neuron at a time
+		while (cNeuron < m_vecpNeurons.size())
+		{
+			SNeuron* curNeuron = m_vecpNeurons[cNeuron];
 			//now put the sum through the activation function and assign the 
 			//value to this neuron's output
 			curNeuron->dLastOutput = curNeuron->dOutput;
 			curNeuron->dOutput = Sigmoid(curNeuron->dSumActivation, curNeuron->dActivationResponse);
-
-			if (CParams::bAdaptable && curNeuron->dSumModulatory != 0) {
-				double modStrength = Sigmoid(curNeuron->dSumModulatory, curNeuron->dActivationResponse);
-
-				for (int lnk=0; lnk<curNeuron->vecLinksIn.size(); ++lnk)
-				{
-					SLink synapse = curNeuron->vecLinksIn[lnk];
-					if (synapse.pIn->NeuronType != modulatory) {
-						// Update weights of non-modulatory connections
-						double A=0, B=0, C=-0.38, D=0, learningrate = -94.6;
-
-						double pre, post;
-
-						if (synapse.bRecurrent) {
-							pre = synapse.pIn->dLastOutput;
-							post = synapse.pOut->dOutput;
-						}
-						else {
-							pre = synapse.pIn->dOutput;
-							post = synapse.pOut->dOutput;
-						}
-
-						double delta = modStrength * learningrate * (A * pre * post + B * pre + C * post + D);
-						synapse.dWeight += delta;
-
-						if (synapse.dWeight > 10) {
-							synapse.dWeight = 10;
-						} else if (synapse.dWeight < -10) {
-							synapse.dWeight = -10;
-						}
-					}
-				}
-			} 
 
 			if (curNeuron->NeuronType == output)
 			{
@@ -162,10 +152,62 @@ vector<double> CNeuralNet::Update(const vector<double> &inputs,
 				outputs.push_back(curNeuron->dOutput);
 			}
 
-			//next neuron
-			++cNeuron;
+			cNeuron++;
 		}
 
+		if (CParams::bAdaptable) {
+			cNeuron = 0;
+
+			while (cNeuron < m_vecpNeurons.size()) {
+				SNeuron* curNeuron = m_vecpNeurons[cNeuron];
+				if (!(curNeuron->NeuronType == input || curNeuron->NeuronType == bias)) {
+					double modStrength = Sigmoid(curNeuron->dSumModulatory, 1);
+
+					if (modStrength != 0.0) {
+						bool modConnected = false;
+						for (int lnk=0; lnk<curNeuron->vecLinksIn.size(); ++lnk)
+						{
+							if (curNeuron->vecLinksIn[lnk].pIn->NeuronType == modulatory) {
+								modConnected = true;
+								break;
+							}
+						}
+
+						if (modConnected) {
+							for (int lnk=0; lnk<curNeuron->vecLinksIn.size(); ++lnk)
+							{
+								SLink synapse = curNeuron->vecLinksIn[lnk];
+								if (synapse.pIn->NeuronType != modulatory) {
+									// Update weights of non-modulatory connections
+									double A=0, B=0, C=-0.38, D=0, learningrate = -94.6;
+
+									double pre, post;
+
+									if (synapse.bRecurrent) {
+										pre = synapse.pIn->dLastOutput;
+										post = synapse.pOut->dOutput;
+									}
+									else {
+										pre = synapse.pIn->dOutput;
+										post = synapse.pOut->dOutput;
+									}
+
+									double delta = modStrength * learningrate * (A * pre * post + B * pre + C * post + D);
+									synapse.dWeight += delta;
+
+									if (synapse.dWeight > 10) {
+										synapse.dWeight = 10;
+									} else if (synapse.dWeight < -10) {
+										synapse.dWeight = -10;
+									}
+								}
+							}
+						}
+					}
+				}
+				cNeuron++;
+			}
+		}
 	}//next iteration through the network
 
 #if 1
