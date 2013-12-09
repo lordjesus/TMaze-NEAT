@@ -299,13 +299,21 @@ bool CController::Update()
 
 		//insert the new  brains back into the sweepers and reset their
 		//positions
+		// also sum fitness values, so we can report average of this generation
+		float avgFitness = 0;
+		float bestFitness = 0;
 		int i = 0;
 		for (i=0; i<m_NumSweepers; ++i)
 		{
+			float sweeperFitness = m_vecSweepers[i].Fitness();
+			if(sweeperFitness > bestFitness) bestFitness = sweeperFitness;
+			avgFitness += sweeperFitness;
 			m_vecSweepers[i].InsertNewBrain(pBrains[i]);
 
 			m_vecSweepers[i].Reset();
 		}
+
+		avgFitness /= i;
 
 		//grab the NNs of the best performers from the last generation
 		vector<CNeuralNet*> pBestBrains = m_pPop->GetBestPhenotypesFromLastGeneration();
@@ -316,6 +324,23 @@ bool CController::Update()
 			m_vecBestSweepers[i].InsertNewBrain(pBestBrains[i]);
 
 			m_vecBestSweepers[i].Reset();
+		}
+
+		// Write average fitness and best fitness for this generation out to be appended to a file
+		std::ofstream outfile;
+		outfile.open("fitnessValues.txt", std::ios_base::app);
+		if(m_iGenerations == 1) {
+			outfile << "         -----------\n"; // Signify new run
+			outfile << "\"Generation\";\"Best\";\"Avg\"\n";
+		}
+		else
+		{
+			outfile << string("\"" + itos(m_iGenerations-1) + "\"");
+			outfile << string(";");
+			outfile << string("\"") << bestFitness << string("\"");
+			outfile << string(";");
+			outfile << string("\"") << avgFitness << string("\"");
+			outfile << "\n";
 		}
 
 		//this will call WM_PAINT which will render our scene
